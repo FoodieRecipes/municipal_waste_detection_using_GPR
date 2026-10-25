@@ -17,6 +17,8 @@ import os
 import joblib
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -43,7 +45,7 @@ if not os.path.exists(DATA_PATH):
 
 df = pd.read_csv(DATA_PATH)
 print(f"[OK] Data loaded successfully from {DATA_PATH}")
-print(f"    Total records: {len(df)} monthly observations")
+print(f"    Total records: {len(df)} observations")
 print(f"    Available features: {df.columns.tolist()}\n")
 
 # 1.2 Time-Series Formatting & Sorting
@@ -74,7 +76,8 @@ print("=" * 80)
 df['year'] = df['date'].dt.year
 df['month'] = df['date'].dt.month
 df['quarter'] = df['date'].dt.quarter
-df['time_index'] = np.arange(len(df))
+df['days_in_month'] = df['date'].dt.days_in_month
+df['time_index'] = (df['year'] - 2019) * 12.0 + (df['month'] - 1) + (df['date'].dt.day - 1) / df['days_in_month']
 
 # Cyclical month encoding (captures annual cycle continuously)
 df['sin_month'] = np.sin(2 * np.pi * df['month'] / 12.0)
@@ -85,8 +88,8 @@ df['num_holidays'] = df['public_holidays'].fillna('').apply(
     lambda x: len(str(x).split(';')) if str(x).strip() != '' else 0
 )
 
-# Per-capita waste generation (tonnes/person/month)
-df['per_capita_kg_per_day'] = (df['waste_tonnes_estimated'] * 1000) / (df['population'] * df['date'].dt.days_in_month)
+# Per-capita waste generation (kg/person/day)
+df['per_capita_kg_per_day'] = (df['waste_tonnes_estimated'] * 1000) / (df['population'] * df['days_in_month'])
 
 print("[OK] Engineered Features:")
 print("    - Temporal: time_index (trend), year, month, quarter, sin_month, cos_month")
@@ -106,13 +109,13 @@ X = df[feature_cols].copy()
 y = df[target_col].values
 
 # 2.2 Chronological Train/Test Split (80% Train, 20% Test)
-split_idx = int(len(df) * 0.8)  # 67 train, 17 test
+split_idx = int(len(df) * 0.8)
 X_train, X_test = X.iloc[:split_idx], X.iloc[split_idx:]
 y_train, y_test = y[:split_idx], y[split_idx:]
 dates_train, dates_test = df['date'].iloc[:split_idx], df['date'].iloc[split_idx:]
 
-print(f"\n[OK] Train Set: {len(X_train)} samples ({dates_train.iloc[0].strftime('%Y-%m')} to {dates_train.iloc[-1].strftime('%Y-%m')})")
-print(f"[OK] Test Set:  {len(X_test)} samples ({dates_test.iloc[0].strftime('%Y-%m')} to {dates_test.iloc[-1].strftime('%Y-%m')})")
+print(f"\n[OK] Train Set: {len(X_train)} samples ({dates_train.iloc[0].strftime('%Y-%m-%d')} to {dates_train.iloc[-1].strftime('%Y-%m-%d')})")
+print(f"[OK] Test Set:  {len(X_test)} samples ({dates_test.iloc[0].strftime('%Y-%m-%d')} to {dates_test.iloc[-1].strftime('%Y-%m-%d')})")
 
 # 2.3 Feature Standardization
 scaler = StandardScaler()
@@ -123,6 +126,18 @@ X_all_scaled = scaler.transform(X)
 print("\n" + "=" * 80)
 print("STAGE 3: KERNEL COMPARISON & HYPERPARAMETER OPTIMIZATION (Section 3.3.4)")
 print("=" * 80)
+
+# -----------------------------------------------------------------------
+# Strategy: Optimize hyperparameters on a representative subsample (every
+# 6th training point ≈ 160 points) using L-BFGS marginal log-likelihood
+# maximization, then refit the full training set with the learned kernel
+# (optimizer=None) for O(N^3) efficiency on 960 points.
+# -----------------------------------------------------------------------
+SUBSAMPLE_STEP = 6
+sub_idx = np.arange(0, len(X_train), SUBSAMPLE_STEP)
+X_sub = X_train_scaled[sub_idx]
+y_sub = y_train[sub_idx]
+print(f"[OK] Subsample for hyperparameter optimization: {len(sub_idx)} points (every {SUBSAMPLE_STEP}th sample)")
 
 # Define Candidate Kernels
 kernel_candidates = {
@@ -168,14 +183,28 @@ fitted_models = {}
 
 for name, kern in kernel_candidates.items():
     print(f"--> Training GPR with [{name}]...")
-    gpr = GaussianProcessRegressor(
+
+    # Step A: Optimize kernel hyperparameters on representative subsample
+    sub_gpr = GaussianProcessRegressor(
         kernel=kern,
         normalize_y=True,
-        alpha=1e-5,
-        n_restarts_optimizer=10,
+        alpha=1e-3,
+        n_restarts_optimizer=3,
+        random_state=42
+    )
+    sub_gpr.fit(X_sub, y_sub)
+    learned_kernel = sub_gpr.kernel_
+
+    # Step B: Refit on full training set with learned kernel (no re-optimization)
+    gpr = GaussianProcessRegressor(
+        kernel=learned_kernel,
+        optimizer=None,
+        normalize_y=True,
+        alpha=1e-3,
         random_state=42
     )
     gpr.fit(X_train_scaled, y_train)
+
     y_test_pred, y_test_std = gpr.predict(X_test_scaled, return_std=True)
     m = compute_metrics(y_test, y_test_pred, y_test_std)
     m["Kernel"] = name
@@ -212,18 +241,29 @@ print("\n" + "=" * 80)
 print("STAGE 4: FUTURE FORECASTING (2026 - 2030) & RETRAINING")
 print("=" * 80)
 
-# Retrain GPR on full dataset (84 months: 2019 - 2025) for future deployment
-final_gpr = GaussianProcessRegressor(
+# Retrain GPR on full dataset (1200 observations: 2019 - 2025) for future deployment
+# Optimize on subsample, then fit full
+sub_full_idx = np.arange(0, len(X), SUBSAMPLE_STEP)
+sub_full_gpr = GaussianProcessRegressor(
     kernel=kernel_candidates[best_kernel_name],
     normalize_y=True,
-    alpha=1e-5,
-    n_restarts_optimizer=15,
+    alpha=1e-3,
+    n_restarts_optimizer=5,
     random_state=42
 )
 final_scaler = StandardScaler()
 X_full_scaled = final_scaler.fit_transform(X)
+sub_full_gpr.fit(X_full_scaled[sub_full_idx], y[sub_full_idx])
+
+final_gpr = GaussianProcessRegressor(
+    kernel=sub_full_gpr.kernel_,
+    optimizer=None,
+    normalize_y=True,
+    alpha=1e-3,
+    random_state=42
+)
 final_gpr.fit(X_full_scaled, y)
-print(f"[OK] Final GPR trained on full 84-month history.")
+print(f"[OK] Final GPR trained on full {len(df)}-observation history.")
 print(f"    Learned Kernel: {final_gpr.kernel_}")
 
 # Generate future feature inputs (2026-01 to 2030-12: 60 months)
@@ -231,7 +271,7 @@ future_dates = pd.date_range(start='2026-01-01', end='2030-12-01', freq='MS')
 future_df = pd.DataFrame({'date': future_dates})
 future_df['year'] = future_df['date'].dt.year
 future_df['month'] = future_df['date'].dt.month
-future_df['time_index'] = np.arange(len(df), len(df) + len(future_df))
+future_df['time_index'] = (future_df['year'] - 2019) * 12.0 + (future_df['month'] - 1)
 future_df['sin_month'] = np.sin(2 * np.pi * future_df['month'] / 12.0)
 future_df['cos_month'] = np.cos(2 * np.pi * future_df['month'] / 12.0)
 
@@ -239,15 +279,15 @@ future_df['cos_month'] = np.cos(2 * np.pi * future_df['month'] / 12.0)
 # Population annual growth ~ 2.8% per annum
 last_pop = df['population'].iloc[-1]
 monthly_pop_growth = (1 + 0.028) ** (1/12)
-future_pops = [last_pop * (monthly_pop_growth ** (i + 1)) for i in range(len(future_df))]
+future_pops = [int(round(last_pop * (monthly_pop_growth ** (i + 1)))) for i in range(len(future_df))]
 future_df['population'] = future_pops
 
 # Climate features: Average monthly historical climate for Uyo (tropical rainforest climate)
-monthly_climate = df.groupby('month')[['avg_temperature_c', 'rainfall_mm', 'humidity_percent']].mean()
+monthly_climate = df.groupby('month')[['avg_temperature_c', 'rainfall_mm', 'humidity_percent']].mean().round(2)
 future_df = future_df.merge(monthly_climate, on='month', how='left')
 
 # Public holidays typical monthly counts for Nigeria
-monthly_holidays = df.groupby('month')['num_holidays'].median().round()
+monthly_holidays = df.groupby('month')['num_holidays'].median().round().astype(int)
 future_df = future_df.merge(monthly_holidays, on='month', how='left')
 
 # Predict Future
@@ -282,4 +322,3 @@ artifacts = {
 joblib.dump(artifacts, 'gpr_waste_model.pkl')
 print("\n[OK] Model, Scaler & Pipeline Artifacts saved to 'gpr_waste_model.pkl'")
 print("=" * 80)
-

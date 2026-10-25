@@ -456,14 +456,10 @@ st.sidebar.markdown("<p style='font-size: 11px; font-weight: 700; text-transform
 page = st.sidebar.radio(
     "Select Application Module:",
     [
-        "1. Executive Portal & Architecture",
-        "2. Main Forecasting Dashboard (2026-2030)",
-        "3. Model Validation & Diagnostic Visualizations",
-        "4. Uyo Municipal Zonal Waste & GIS Map",
-        "5. Scenario Simulation Lab (Sensitivity Engine)",
-        "6. Fleet Logistics & Resource Sizing",
-        "7. Live Model Testing Sandbox (Upload & Predict)",
-        "8. Historical Data Explorer & Seasonality"
+        "1. Main Forecasting Dashboard",
+        "2. Model Validation & Diagnostic Visualizations",
+        "3. Uyo Municipal Zonal Waste & GIS Map",
+        "4. Live Model Testing"
     ],
     label_visibility="collapsed"
 )
@@ -481,41 +477,32 @@ st.sidebar.markdown("""
 
 
 # ==============================================================================
-# MODULE 1: EXECUTIVE PORTAL & SYSTEM ARCHITECTURE
+# MODULE 1: MAIN FORECASTING DASHBOARD
 # ==============================================================================
-if page == "1. Executive Portal & Architecture":
-    st.markdown('<div class="portal-card-header">🏛️ Executive Overview & Proposed System Architecture</div>', unsafe_allow_html=True)
-    
-    st.markdown(r"""
-    Rapid demographic growth, urbanization, and changing consumer lifestyles in **Uyo Municipality** have significantly escalated municipal solid waste (MSW) generation.
-    Conventional deterministic forecasting models (e.g., ARIMA or classical Multiple Linear Regression) assume rigid linear trajectories and fail to convey predictive uncertainty.
-    
-    This research develops an **Optimized Gaussian Process Regression (GPR)** framework that pairs non-parametric Bayesian learning with a custom composite kernel:
-    $$\mathcal{GP} \sim \mathcal{N}(\mu(x), k(x, x'))$$
-    By jointly modeling long-term demographic expansion, multi-frequency wet/dry seasonality, and random environmental shocks, the system generates **probabilistic predictions equipped with exact 95% Bayesian Confidence Intervals ($\mu \pm 1.96\sigma$)** for strategic municipal governance.
-    """)
+if page == "1. Main Forecasting Dashboard":
+    st.markdown('<div class="portal-card-header">📊 Solid Waste Generation Forecasting Dashboard — Uyo Municipality</div>', unsafe_allow_html=True)
 
     # Top KPI Scorecards
     k1, k2, k3, k4 = st.columns(4)
     with k1:
-        st.markdown("""
+        st.markdown(f"""
         <div class="stat-card">
-            <div class="stat-label">Historical Training Base</div>
-            <div class="stat-value">84 Months</div>
-            <div class="stat-subtext">2019 to 2025 Empirical Series</div>
+            <div class="stat-label">Dataset Observations</div>
+            <div class="stat-value">{len(df_hist):,} Records</div>
+            <div class="stat-subtext">2019 to 2025 Historical Series</div>
         </div>
         """, unsafe_allow_html=True)
     with k2:
         st.markdown(f"""
-        <div class="stat-card">
-            <div class="stat-label">Overall Goodness of Fit</div>
+        <div class="stat-card" style="border-left-color: #2563EB;">
+            <div class="stat-label">Model Goodness of Fit</div>
             <div class="stat-value">R² = {metrics['overall']['R2']:.4f}</div>
-            <div class="stat-subtext">98.5% Variance Explained</div>
+            <div class="stat-subtext">Overall Variance Explained</div>
         </div>
         """, unsafe_allow_html=True)
     with k3:
         st.markdown(f"""
-        <div class="stat-card">
+        <div class="stat-card" style="border-left-color: #10B981;">
             <div class="stat-label">Out-of-Sample MAPE</div>
             <div class="stat-value">{metrics['test']['MAPE (%)']:.2f}%</div>
             <div class="stat-subtext">High Predictive Precision</div>
@@ -523,106 +510,14 @@ if page == "1. Executive Portal & Architecture":
         """, unsafe_allow_html=True)
     with k4:
         st.markdown(f"""
-        <div class="stat-card">
-            <div class="stat-label">95% Uncertainty Calibration</div>
-            <div class="stat-value">100.0%</div>
-            <div class="stat-subtext">Empirical CI Coverage</div>
+        <div class="stat-card" style="border-left-color: #7C3AED;">
+            <div class="stat-label">95% CI Calibration</div>
+            <div class="stat-value">{metrics['test']['95% CI Coverage (%)']:.1f}%</div>
+            <div class="stat-subtext">Bayesian Interval Coverage</div>
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown("---")
-
-    # Chapter 3 System Architecture Flow (Figures 3.2, 3.3, 3.4)
-    st.markdown('<div class="portal-card-header">⚙️ System Architecture & Workflow Pipeline (Chapter 3)</div>', unsafe_allow_html=True)
-    
-    col_arch1, col_arch2 = st.columns([3, 2])
-    with col_arch1:
-        st.markdown("""
-        ```
-        +----------------------------------------------------------------------------------------------------+
-        | STAGE 1: EMPIRICAL DATA INGESTION & PREPROCESSING (Section 3.3.1)                                  |
-        | - 84-Month Empirical Records from AKSEPWMA (2019 - 2025)                                           |
-        | - Environmental Covariates: Mean Temperature (°C), Rainfall Depth (mm), Relative Humidity (%)      |
-        | - Demographic Covariates: Projected Uyo Municipality Census Population                             |
-        | - Calendar Covariates: Public Holidays & High-Generation Festive Months                            |
-        | - Cleaning, Missing Value Imputation, IQR Verification, and Scaled Feature Matrix Formation         |
-        +----------------------------------------------------------------------------------------------------+
-                                                          │
-                                                          ▼
-        +----------------------------------------------------------------------------------------------------+
-        | STAGE 2: KERNEL FORMULATION & BAYESIAN GPR TRAINING (Section 3.3.2)                                |
-        | - Feature Engineering: Continuous Trend Index, Cyclical Sine/Cosine Harmonic Encodings             |
-        | - Chronological 80/20 Train/Test Partitioning (Preserving strict temporal causality)               |
-        | - Composite Kernel: DotProduct(Linear Trend) + Matérn(ν=1.5, Seasonal) + WhiteKernel(Noise)        |
-        | - Hyperparameter Optimization: L-BFGS-B Marginal Log-Likelihood Maximization with 15 Restarts      |
-        +----------------------------------------------------------------------------------------------------+
-                                                          │
-                                                          ▼
-        +----------------------------------------------------------------------------------------------------+
-        | STAGE 3: MULTI-METRIC PERFORMANCE VALIDATION (Section 3.3.3)                                       |
-        | - Regression Metrics: RMSE (758.3 t), MAE (567.1 t), MAPE (1.73%), and R² (0.9854)                 |
-        | - Uncertainty Verification: Empirical 95% Bayesian Confidence Interval Enclosure Check            |
-        | - Residual Diagnostics: Normality Histogram and Zero-Mean Homoscedasticity Analysis                |
-        | - Operational Discretization: 4-Tier Municipal Waste Confusion Matrix (91.7% Accuracy)            |
-        +----------------------------------------------------------------------------------------------------+
-                                                          │
-                                                          ▼
-        +----------------------------------------------------------------------------------------------------+
-        | STAGE 4: PROBABILISTIC INFERENCE & SCENARIO TESTING (Section 3.3.4)                                |
-        | - 60-Month Future Horizon Projections (2026 - 2030) with Lower and Upper 95% Bounds               |
-        | - Interactive Single-Observation Predictor & Dynamic Batch CSV Testing Sandbox                     |
-        | - What-If Sensitivity Simulator for Demographic Shocks and Extreme Rainfall Anomalies             |
-        +----------------------------------------------------------------------------------------------------+
-                                                          │
-                                                          ▼
-        +----------------------------------------------------------------------------------------------------+
-        | STAGE 5: STRATEGIC DECISION SUPPORT & LOGISTICS SIZING (Section 3.3.5)                             |
-        | - Municipal Fleet Requirements: 15-Tonne Compactor Trucks, 1,100L Waste Bins, Siting Demands       |
-        | - Uyo Zonal GIS Allocation: Ibom Plaza, Itam Market, Aka Rd, Abak Rd, Oron Rd, Ikpa Rd             |
-        | - Landfill Airspace Depletion Rate Modeling & AKSEPWMA Resource Deployment Directives              |
-        +----------------------------------------------------------------------------------------------------+
-        ```
-        """)
-    
-    with col_arch2:
-        st.markdown("""
-        <div class="portal-card">
-            <div style="font-weight: 700; font-size: 16px; margin-bottom: 10px; color: #0F172A;">
-                🔬 Mathematical Formulation of GPR
-            </div>
-            <div style="font-size: 13px; color: #475569; line-height: 1.6;">
-                A Gaussian Process is a collection of random variables, any finite number of which have a joint Gaussian distribution:
-                <br><br>
-                <b>Prior Formulation:</b><br>
-                <code>f(x) ~ GP(m(x), k(x, x'))</code>
-                <br><br>
-                <b>Optimized Composite Kernel:</b><br>
-                <code>k(x, x') = σ_v² + (x · x') + σ_m² (1 + √3 d / l) exp(-√3 d / l) + σ_n² δ_ij</code>
-                <br><br>
-                <b>Posterior Predictive Mean:</b><br>
-                <code>μ_* = K_*^T [K + σ_n² I]^(-1) y</code>
-                <br><br>
-                <b>Posterior Predictive Covariance:</b><br>
-                <code>Σ_* = K_** - K_*^T [K + σ_n² I]^(-1) K_*</code>
-                <br><br>
-                <b>95% Bayesian Confidence Interval:</b><br>
-                <code>CI_95% = [μ_* - 1.96 σ_*,  μ_* + 1.96 σ_*]</code>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-
-# ==============================================================================
-# MODULE 2: MAIN FORECASTING DASHBOARD (2026 - 2030)
-# ==============================================================================
-elif page == "2. Main Forecasting Dashboard (2026-2030)":
-    st.markdown('<div class="portal-card-header">📈 Solid Waste Generation Forecast — Uyo Municipality (2026 - 2030)</div>', unsafe_allow_html=True)
-    
-    st.markdown("""
-    This primary forecasting dashboard implements **Option D (Dual-Paradigm Presentation)** as established in municipal research consultations: 
-    presenting both the **probabilistic continuous GPR forecast in tonnes** (with 95% Bayesian Confidence Intervals) and its corresponding 
-    **operational waste generation class** (Very Low, Low, Moderate, High, Very High) to directly assist AKSEPWMA in haulage scheduling, fleet allocation, and landfill airspace management.
-    """)
 
     # Interactive Dashboard Controls
     ctrl_col1, ctrl_col2, ctrl_col3 = st.columns([1.5, 1.5, 2])
@@ -635,7 +530,7 @@ elif page == "2. Main Forecasting Dashboard (2026-2030)":
     with ctrl_col2:
         unit_choice = st.radio("Display Measurement Unit:", ["Tonnes per Month", "Tonnes per Day (Daily Avg)"], horizontal=True)
     with ctrl_col3:
-        st.write("") # spacing
+        st.write("")
         show_ci_band = st.checkbox("Display 95% Bayesian Confidence Interval Band", value=True)
         show_class_bands = st.checkbox("Display Waste Class Horizontal Zones", value=True)
 
@@ -654,24 +549,15 @@ elif page == "2. Main Forecasting Dashboard (2026-2030)":
         df_view = df_future.copy()
         period_label = "60 Months (2026 - 2030)"
 
-    # Compute unit conversions
     unit_multiplier = (1.0 / 30.4167) if "Day" in unit_choice else 1.0
     unit_str = "tonnes/day" if "Day" in unit_choice else "tonnes/month"
 
-    avg_pred = df_view['forecast_tonnes'].mean() * unit_multiplier
-    min_pred = df_view['forecast_tonnes'].min() * unit_multiplier
-    max_pred = df_view['forecast_tonnes'].max() * unit_multiplier
-    min_date = df_view.loc[df_view['forecast_tonnes'].idxmin(), 'date'].strftime('%b %Y')
-    max_date = df_view.loc[df_view['forecast_tonnes'].idxmax(), 'date'].strftime('%b %Y')
-    avg_ci_span = (df_view['ci_upper_95'] - df_view['ci_lower_95']).mean() * unit_multiplier
-
-    # Target Month Picker for the Option D Presentation Card
+    # Target Month Picker for the Forecast Card
     month_options = df_view['date'].dt.strftime('%B %Y').tolist()
     card_col_sel, _ = st.columns([2, 3])
     with card_col_sel:
-        target_card_month = st.selectbox("🎯 Select Target Month for Detailed Option D Presentation Card:", options=month_options, index=0)
+        target_card_month = st.selectbox("🎯 Select Target Month for Detailed Forecast Card:", options=month_options, index=0)
 
-    # Compute parameters for Option D Presentation Card
     target_match_date = pd.to_datetime(target_card_month)
     target_row = df_view[(df_view['year'] == target_match_date.year) & (df_view['month'] == target_match_date.month)].iloc[0]
     card_pred_tonnes = target_row['forecast_tonnes']
@@ -682,40 +568,23 @@ elif page == "2. Main Forecasting Dashboard (2026-2030)":
     card_class_info = classify_waste_5tier(card_pred_tonnes)
     card_trucks = int(np.ceil(card_daily_tonnes / (15 * 2)))
 
-    # Empirical trend relative to historical baseline
     hist_baseline_mean = df_hist['waste_tonnes_estimated'].mean()
     trend_pct = ((card_pred_tonnes - hist_baseline_mean) / hist_baseline_mean) * 100.0
     trend_desc = f"Increasing (+{trend_pct:.1f}% vs. Historical Baseline)" if trend_pct > 0 else f"Decreasing ({trend_pct:.1f}% vs. Historical Baseline)"
     trend_symbol = "📈" if trend_pct > 0 else "📉"
 
-    # =========================================================
-    # OPTION D FINAL RESULT PRESENTATION CARD (Section 1 & 4 from ChatGPT link)
-    # =========================================================
     render_html_block(f"""
     <div class="portal-card" style="border: 2px solid #2563EB; background: #FFFFFF; padding: 22px; border-radius: 14px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08); margin-bottom: 24px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #F1F5F9; padding-bottom: 12px; margin-bottom: 18px;">
-            <div>
-                <div style="font-size: 19px; font-weight: 800; color: #0F172A; letter-spacing: 0.5px;">
-                    📋 SOLID WASTE GENERATION FORECAST — UYO MUNICIPALITY
-                </div>
-                <div style="font-size: 13px; color: #64748B; font-weight: 600; margin-top: 3px;">
-                    Option D Result Paradigm: Numerical GPR Inference Coupled with Empirical 5-Tier Waste Classification
-                </div>
-            </div>
-            <div>
-                <span class="status-pill pill-online">● FINAL OPTION D RESULT</span>
-            </div>
-        </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px;">
             <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 18px; border-left: 5px solid #2563EB;">
                 <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">
-                    Predicted Waste Generation (Quantity)
+                    Predicted Waste Generation
                 </div>
                 <div style="font-size: 32px; font-weight: 800; color: #0F172A; margin: 6px 0;">
                     {card_pred_tonnes:,.1f} tonnes
                 </div>
                 <div style="font-size: 13px; color: #2563EB; font-weight: 600;">
-                    Daily Equivalent: <b>{card_daily_tonnes:,.1f} tonnes/day</b> &bull; Posterior Mean (μ*)
+                    Daily Equivalent: <b>{card_daily_tonnes:,.1f} tonnes/day</b>
                 </div>
             </div>
             <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 18px; border-left: 5px solid {card_class_info['color']};">
@@ -728,7 +597,7 @@ elif page == "2. Main Forecasting Dashboard (2026-2030)":
                     </span>
                 </div>
                 <div style="font-size: 13px; color: #475569; font-weight: 600;">
-                    Empirical Threshold: <b>{card_class_info['threshold_str']}</b>
+                    Threshold: <b>{card_class_info['threshold_str']}</b>
                 </div>
             </div>
         </div>
@@ -738,77 +607,25 @@ elif page == "2. Main Forecasting Dashboard (2026-2030)":
                 <td style="padding: 10px 16px; font-weight: 700; color: #0F172A;">📅 {target_card_month}</td>
             </tr>
             <tr style="border-bottom: 1px solid #E2E8F0;">
-                <td style="padding: 10px 16px; font-weight: 700; color: #475569;">Predicted Waste Generation</td>
-                <td style="padding: 10px 16px; font-weight: 700; color: #0F172A;">{card_pred_tonnes:,.1f} tonnes/month ({card_daily_tonnes:,.1f} tonnes/day)</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #E2E8F0; background: #F8FAFC;">
-                <td style="padding: 10px 16px; font-weight: 700; color: #475569;">Waste Generation Class</td>
-                <td style="padding: 10px 16px; font-weight: 700; color: #0F172A;"><span class="tier-badge {card_class_info['css']}">{card_class_info['class']}</span></td>
-            </tr>
-            <tr style="border-bottom: 1px solid #E2E8F0;">
                 <td style="padding: 10px 16px; font-weight: 700; color: #475569;">Forecast Trend</td>
                 <td style="padding: 10px 16px; font-weight: 700; color: #0F172A;">{trend_symbol} {trend_desc}</td>
             </tr>
             <tr style="border-bottom: 1px solid #E2E8F0; background: #F8FAFC;">
-                <td style="padding: 10px 16px; font-weight: 700; color: #475569;">Prediction Interval (95% CI)</td>
-                <td style="padding: 10px 16px; font-weight: 700; color: #0F172A;">[{card_ci_lower:,.1f} – {card_ci_upper:,.1f} tonnes] (Uncertainty Spread: ±{card_ci_spread/2:,.1f} t)</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #E2E8F0;">
-                <td style="padding: 10px 16px; font-weight: 700; color: #475569;">Model Architecture Used</td>
-                <td style="padding: 10px 16px; font-weight: 700; color: #0F172A;">Gaussian Process Regression (Composite DotProduct + Matérn 1.5 + WhiteNoise)</td>
+                <td style="padding: 10px 16px; font-weight: 700; color: #475569;">95% Confidence Interval</td>
+                <td style="padding: 10px 16px; font-weight: 700; color: #0F172A;">[{card_ci_lower:,.1f} – {card_ci_upper:,.1f} tonnes] (±{card_ci_spread/2:,.1f} t)</td>
             </tr>
             <tr style="background: #F8FAFC;">
-                <td style="padding: 10px 16px; font-weight: 700; color: #475569;">Planning / Logistics Directive</td>
-                <td style="padding: 10px 16px; font-weight: 600; color: #0F172A;">🚛 {card_class_info['recommendation']} (Sizing: <b>{card_trucks} active 15-tonne compactor trucks</b> required).</td>
+                <td style="padding: 10px 16px; font-weight: 700; color: #475569;">Operational Action</td>
+                <td style="padding: 10px 16px; font-weight: 600; color: #0F172A;">🚛 {card_class_info['recommendation']} (Sizing: <b>{card_trucks} active 15-tonne compactor trucks</b>).</td>
             </tr>
         </table>
     </div>
     """)
 
-    # Horizon KPI Cards
-    kpi1, kpi2, kpi3, kpi4 = st.columns(4)
-    with kpi1:
-        st.markdown(f"""
-        <div class="stat-card">
-            <div class="stat-label">Forecast Horizon</div>
-            <div class="stat-value">{period_label}</div>
-            <div class="stat-subtext">Active Evaluation Window</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with kpi2:
-        st.markdown(f"""
-        <div class="stat-card" style="border-left-color: #2563EB;">
-            <div class="stat-label">Average Horizon Waste</div>
-            <div class="stat-value">{avg_pred:,.1f}</div>
-            <div class="stat-subtext">{unit_str}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with kpi3:
-        st.markdown(f"""
-        <div class="stat-card" style="border-left-color: #10B981;">
-            <div class="stat-label">Lowest Monthly Prediction</div>
-            <div class="stat-value">{min_pred:,.1f}</div>
-            <div class="stat-subtext">{min_date} ({unit_str})</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with kpi4:
-        st.markdown(f"""
-        <div class="stat-card" style="border-left-color: #DC2626;">
-            <div class="stat-label">Highest Prediction (Peak)</div>
-            <div class="stat-value">{max_pred:,.1f}</div>
-            <div class="stat-subtext">{max_date} ({unit_str})</div>
-        </div>
-        """, unsafe_allow_html=True)
+    # Main Forecasting Trajectory Graph
+    st.markdown("#### Historical & Forecast Waste Generation Trajectory (2019 – 2030)")
 
-    st.markdown("---")
-
-    # =========================================================
-    # THE MAIN FORECASTING GRAPH WITH COLORED CLASS BANDS
-    # =========================================================
-    st.markdown("#### 1. The Main Forecasting Trajectory with Empirical Waste Class Zones")
-    st.caption("X-axis: Date timeline | Y-axis: Solid waste generated | Colored horizontal background zones: 5 operational waste classes (Very Low to Very High) | Solid line: Historical records | Dashed line: GPR predictions | Shaded blue zone: 95% Bayesian Confidence Interval.")
-
-    fig_main, ax_main = plt.subplots(figsize=(13, 5.8), dpi=200)
+    fig_main, ax_main = plt.subplots(figsize=(13, 5.5), dpi=200)
     fig_main.patch.set_facecolor('#FFFFFF')
     ax_main.set_facecolor('#F8FAFC')
 
@@ -817,7 +634,6 @@ elif page == "2. Main Forecasting Dashboard (2026-2030)":
     fut_ci_low = df_view['ci_lower_95'].values * unit_multiplier
     fut_ci_high = df_view['ci_upper_95'].values * unit_multiplier
 
-    # Colored horizontal background bands for waste classes
     if show_class_bands:
         class_bands = [
             (0, 30000, '#DEF7EC', '#03543F', 'Very Low (<30k t)'),
@@ -827,191 +643,77 @@ elif page == "2. Main Forecasting Dashboard (2026-2030)":
             (45000, 56000, '#FEE2E2', '#991B1B', 'Very High (≥45k t)')
         ]
         for y_b_low, y_b_high, bg_c, txt_c, lbl in class_bands:
-            ax_main.axhspan(
-                y_b_low * unit_multiplier, 
-                y_b_high * unit_multiplier, 
-                facecolor=bg_c, 
-                alpha=0.45, 
-                edgecolor='none', 
-                zorder=0
-            )
-
-        # Threshold guide lines
+            ax_main.axhspan(y_b_low * unit_multiplier, y_b_high * unit_multiplier, facecolor=bg_c, alpha=0.45, edgecolor='none', zorder=0)
         for th in [30000, 35000, 40000, 45000]:
             ax_main.axhline(th * unit_multiplier, color='#94A3B8', linestyle=':', lw=0.9, alpha=0.8, zorder=1)
 
-    # Historical curve
-    ax_main.plot(df_hist['date'], hist_y, color='#0F172A', lw=2.4, marker='o', markersize=3.5, zorder=3, label='Historical Actual Waste Recorded (2019 - 2025)')
-    
-    # Forecast curve
-    ax_main.plot(df_view['date'], fut_y, color='#2563EB', lw=2.6, linestyle='--', marker='s', markersize=3.5, zorder=3, label='Future GPR Predictive Mean Forecast')
+    ax_main.plot(df_hist['date'], hist_y, color='#0F172A', lw=1.6, alpha=0.85, zorder=3, label='Historical Waste Recorded (2019 - 2025)')
+    ax_main.plot(df_view['date'], fut_y, color='#2563EB', lw=2.4, linestyle='--', marker='s', markersize=3.5, zorder=3, label='GPR Forecast (2026 - 2030)')
 
-    # Uncertainty Band
     if show_ci_band:
-        ax_main.fill_between(
-            df_view['date'],
-            fut_ci_low,
-            fut_ci_high,
-            color='#93C5FD',
-            alpha=0.50,
-            zorder=2,
-            label='95% Bayesian Confidence Band (Predictive Uncertainty: μ ± 1.96σ)'
-        )
+        ax_main.fill_between(df_view['date'], fut_ci_low, fut_ci_high, color='#93C5FD', alpha=0.50, zorder=2, label='95% Confidence Band (μ ± 1.96σ)')
 
-    # Boundary line
     boundary_date = pd.to_datetime('2026-01-01')
-    ax_main.axvline(boundary_date, color='#EF4444', linestyle=':', lw=2, zorder=2, label='Forecast Boundary (Jan 2026)')
-    
-    # Set y-axis bounds to show complete waste spectrum
+    ax_main.axvline(boundary_date, color='#EF4444', linestyle=':', lw=2, zorder=2, label='Forecast Start (Jan 2026)')
+
     y_min_bound = max(0, min(hist_y.min(), fut_ci_low.min()) - (2000 * unit_multiplier))
     y_max_bound = max(hist_y.max(), fut_ci_high.max()) + (3000 * unit_multiplier)
     ax_main.set_ylim(y_min_bound, y_max_bound)
 
-    ax_main.set_title("Municipal Solid Waste Trajectory for Uyo Municipality (2019 - 2030) with Class Zones", fontsize=12.5, fontweight='bold', pad=12, color='#0F172A')
-    ax_main.set_ylabel(f"Solid Waste Generated ({unit_str})", fontsize=11, fontweight='bold', color='#0F172A')
-    ax_main.set_xlabel("Observation Timeline", fontsize=11, fontweight='bold', color='#0F172A')
+    ax_main.set_title("Solid Waste Generation Trajectory for Uyo Municipality (2019 - 2030)", fontsize=12, fontweight='bold', pad=12, color='#0F172A')
+    ax_main.set_ylabel(f"Solid Waste Generated ({unit_str})", fontsize=10.5, fontweight='bold', color='#0F172A')
+    ax_main.set_xlabel("Timeline", fontsize=10.5, fontweight='bold', color='#0F172A')
     ax_main.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
     ax_main.xaxis.set_major_locator(mdates.YearLocator(1))
     ax_main.grid(True, linestyle='--', alpha=0.5, color='#CBD5E1', zorder=1)
-    ax_main.legend(loc='upper left', frameon=True, facecolor='#FFFFFF', edgecolor='#CBD5E1', fontsize=9.2)
-
+    ax_main.legend(loc='upper left', frameon=True, facecolor='#FFFFFF', edgecolor='#CBD5E1', fontsize=9)
     st.pyplot(fig_main)
 
     st.markdown("---")
 
-    # =========================================================
-    # CLASS DISTRIBUTION BREAKDOWN (Section 4 from ChatGPT link)
-    # =========================================================
-    st.markdown("#### 2. Waste Generation Class Distribution Breakdown")
-    st.caption("Distribution of forecast monthly projections across the 5 empirical waste generation classes, aiding AKSEPWMA logistics officers in preparing for sustained high-volume periods.")
-
-    df_view['waste_class_calc'] = df_view['forecast_tonnes'].apply(lambda x: classify_waste_5tier(x)['class'])
-    class_order = ['Very Low', 'Low', 'Moderate', 'High', 'Very High']
-    class_colors_map = {'Very Low': '#059669', 'Low': '#0284C7', 'Moderate': '#D97706', 'High': '#EA580C', 'Very High': '#DC2626'}
-    
-    counts_series = df_view['waste_class_calc'].value_counts().reindex(class_order, fill_value=0)
-    
-    col_dist1, col_dist2 = st.columns([3, 2])
-    with col_dist1:
-        fig_dist, ax_dist = plt.subplots(figsize=(7, 3.8), dpi=200)
-        fig_dist.patch.set_facecolor('#FFFFFF')
-        ax_dist.set_facecolor('#F8FAFC')
-        
-        bars = ax_dist.bar(
-            counts_series.index, 
-            counts_series.values, 
-            color=[class_colors_map[c] for c in counts_series.index],
-            edgecolor='#0F172A', 
-            alpha=0.88, 
-            width=0.55
-        )
-        ax_dist.set_title(f"Forecast Class Distribution ({period_label}: {len(df_view)} Months)", fontweight='bold', fontsize=11, pad=10, color='#0F172A')
-        ax_dist.set_ylabel("Number of Months", fontweight='bold', fontsize=10, color='#0F172A')
-        ax_dist.grid(axis='y', linestyle='--', alpha=0.5, color='#CBD5E1')
-        
-        for b in bars:
-            h = b.get_height()
-            if h > 0:
-                pct = (h / len(df_view)) * 100.0
-                ax_dist.text(b.get_x() + b.get_width()/2., h + 0.5, f"{h} ({pct:.0f}%)", ha='center', va='bottom', fontsize=9.5, fontweight='bold', color='#0F172A')
-        
-        ax_dist.set_ylim(0, max(counts_series.values.max() * 1.25, 5))
-        plt.tight_layout()
-        st.pyplot(fig_dist)
-
-    with col_dist2:
-        high_and_very_high_count = counts_series.get('High', 0) + counts_series.get('Very High', 0)
-        high_and_very_high_pct = (high_and_very_high_count / len(df_view)) * 100.0 if len(df_view) > 0 else 0
-        
-        st.markdown(f"""
-        <div class="portal-card" style="height: 100%; display: flex; flex-direction: column; justify-content: center;">
-            <div style="font-weight: 700; font-size: 15px; margin-bottom: 8px; color: #0F172A;">
-                📊 Operational Planning Distribution Insights
-            </div>
-            <div style="font-size: 13px; color: #475569; line-height: 1.6;">
-                During the evaluated <b>{period_label}</b>:
-                <ul style="margin: 6px 0; padding-left: 20px;">
-                    <li><b>{counts_series.get('Very High', 0)} months ({(counts_series.get('Very High', 0)/len(df_view))*100:.1f}%)</b> fall under <b>Very High</b> (≥ 45,000 t/mo), primarily concentrated during festive Q4 seasons (Nov-Dec) and peak wet months.</li>
-                    <li><b>{counts_series.get('High', 0)} months ({(counts_series.get('High', 0)/len(df_view))*100:.1f}%)</b> fall under <b>High</b> (40,000 – 45,000 t/mo).</li>
-                    <li><b>{high_and_very_high_pct:.1f}%</b> of future months require expanded fleet logistics (44+ compactor trucks) to prevent urban overflow in Uyo.</li>
-                </ul>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    # =========================================================
-    # THE DETAILED FORECAST RESULTS TABLE (Option D Format)
-    # =========================================================
-    st.markdown("#### 3. Detailed Forecast Results Table with Operational Waste Classes")
-    
-    st.markdown("""
-    <div class="callout-info">
-        <b>💡 Explanatory Guidance for Waste-Management Officers:</b><br>
-        This operational table presents the complete Option D output format: each future month specifies both the <b>predicted tonnage</b> (with 95% Bayesian Confidence Intervals) 
-        and its assigned <b>Waste Generation Class</b>, alongside the required 15-tonne compactor fleet size and municipal logistics action.
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Format table data
+    # Forecast Table
+    st.markdown("#### Forecast Schedule & Waste Classification Table")
     table_df = df_view.copy()
     table_df['forecast_date'] = table_df['date'].dt.strftime('%B %Y')
     table_df['pred_monthly_tonnes'] = table_df['forecast_tonnes']
     table_df['daily_tonnes'] = table_df['forecast_tonnes'] / 30.4167
     table_df['ci_low_tonnes'] = table_df['ci_lower_95']
     table_df['ci_high_tonnes'] = table_df['ci_upper_95']
-    table_df['uncertainty_width'] = table_df['ci_upper_95'] - table_df['ci_lower_95']
-    
-    # 5-Tier Empirical Waste Classification
     table_df['waste_class'] = table_df['forecast_tonnes'].apply(lambda x: classify_waste_5tier(x)['class'])
-    # Recommended compactor fleet (15 tonnes capacity, 2 trips/day = 30 tonnes/day)
     table_df['compactor_trucks'] = np.ceil(table_df['daily_tonnes'] / (15 * 2)).astype(int)
-    table_df['logistics_action'] = table_df['forecast_tonnes'].apply(lambda x: classify_waste_5tier(x)['recommendation'])
 
-    display_cols = [
-        'forecast_date', 'pred_monthly_tonnes', 'daily_tonnes', 
-        'ci_low_tonnes', 'ci_high_tonnes', 'uncertainty_width', 
-        'waste_class', 'compactor_trucks'
-    ]
-    
+    display_cols = ['forecast_date', 'pred_monthly_tonnes', 'daily_tonnes', 'ci_low_tonnes', 'ci_high_tonnes', 'waste_class', 'compactor_trucks']
     rename_cols = {
         'forecast_date': 'Forecast Period',
         'pred_monthly_tonnes': 'Predicted Waste (Tonnes/Mo)',
         'daily_tonnes': 'Daily Waste (Tonnes/Day)',
-        'ci_low_tonnes': 'Lower 95% Limit (Tonnes)',
-        'ci_high_tonnes': 'Upper 95% Limit (Tonnes)',
-        'uncertainty_width': 'Uncertainty Width (±Tonnes)',
+        'ci_low_tonnes': 'Lower 95% CI (Tonnes)',
+        'ci_high_tonnes': 'Upper 95% CI (Tonnes)',
         'waste_class': 'Waste Generation Class',
         'compactor_trucks': 'Compactor Fleet Required'
     }
-
     styled_table = table_df[display_cols].rename(columns=rename_cols)
-    
     st.dataframe(styled_table.style.format({
         'Predicted Waste (Tonnes/Mo)': '{:,.1f}',
         'Daily Waste (Tonnes/Day)': '{:,.1f}',
-        'Lower 95% Limit (Tonnes)': '{:,.1f}',
-        'Upper 95% Limit (Tonnes)': '{:,.1f}',
-        'Uncertainty Width (±Tonnes)': '{:,.1f}',
+        'Lower 95% CI (Tonnes)': '{:,.1f}',
+        'Upper 95% CI (Tonnes)': '{:,.1f}',
         'Compactor Fleet Required': '{:d} Trucks'
     }), use_container_width=True)
 
-    # Download button for the exact table
     csv_bytes = styled_table.to_csv(index=False).encode('utf-8')
     st.download_button(
-        "📥 Download Forecast Results Table (CSV)",
+        "📥 Download Forecast Schedule (CSV)",
         data=csv_bytes,
         file_name="uyo_msw_gpr_forecast_results_2026_2030.csv",
         mime="text/csv"
     )
 
 
-
 # ==============================================================================
-# MODULE 3: MODEL VALIDATION & DIAGNOSTIC VISUALIZATIONS
+# MODULE 2: MODEL VALIDATION & DIAGNOSTIC VISUALIZATIONS
 # ==============================================================================
-elif page == "3. Model Validation & Diagnostic Visualizations":
+elif page == "2. Model Validation & Diagnostic Visualizations":
     st.markdown('<div class="portal-card-header">🔬 Model Evaluation & Diagnostic Visualizations (Section 4)</div>', unsafe_allow_html=True)
     
     st.markdown("""
@@ -1069,9 +771,9 @@ elif page == "3. Model Validation & Diagnostic Visualizations":
         ax_avp.set_facecolor('#F8FAFC')
         
         # Training points (80%)
-        ax_avp.scatter(y_train_true, y_train_pred, color='#10B981', s=55, alpha=0.75, edgecolors='#064E3B', label='Training Set (2019 - 2024)')
+        ax_avp.scatter(y_train_true, y_train_pred, color='#10B981', s=25, alpha=0.65, edgecolors='#064E3B', label='Training Set (2019 - 2024)')
         # Testing points (20% out-of-time)
-        ax_avp.scatter(y_test_true, y_test_pred, color='#EF4444', s=65, marker='s', alpha=0.85, edgecolors='#7F1D1D', label='Out-of-Time Test Set (2024 - 2025)')
+        ax_avp.scatter(y_test_true, y_test_pred, color='#EF4444', s=35, marker='s', alpha=0.75, edgecolors='#7F1D1D', label='Out-of-Time Test Set (2024 - 2025)')
         
         # 45-degree reference line (y = x)
         min_lim = min(y_all_true.min(), y_all_pred.min()) - 1000
@@ -1120,7 +822,7 @@ elif page == "3. Model Validation & Diagnostic Visualizations":
     
     with diag_col3:
         st.markdown("#### C. Time-Series Tracking with 95% Bayesian Confidence Band")
-        st.caption("Chronological trajectory across all 84 historical months showing actual values, GPR mean estimates, and the 95% uncertainty interval.")
+        st.caption(f"Chronological trajectory across all {len(df_hist):,} historical observations showing actual values, GPR mean estimates, and the 95% uncertainty interval.")
         
         fig_trk, ax_trk = plt.subplots(figsize=(6.5, 5), dpi=200)
         fig_trk.patch.set_facecolor('#FFFFFF')
@@ -1354,8 +1056,8 @@ elif page == "3. Model Validation & Diagnostic Visualizations":
         st.pyplot(fig_part)
 
     with col_part2:
-        st.markdown("#### G. Monthly Percentage Error (MAPE %) Timeline")
-        st.caption("Chronological progression of Absolute Percentage Error across all 84 historical months.")
+        st.markdown("#### G. Percentage Error (MAPE %) Timeline")
+        st.caption(f"Chronological progression of Absolute Percentage Error across all {len(df_hist):,} historical observations.")
 
         abs_pct_errors = np.abs((y_all_true - y_all_pred) / y_all_true) * 100.0
 
@@ -1363,14 +1065,14 @@ elif page == "3. Model Validation & Diagnostic Visualizations":
         fig_err_time.patch.set_facecolor('#FFFFFF')
         ax_et.set_facecolor('#F8FAFC')
 
-        ax_et.bar(df_hist['date'], abs_pct_errors, width=22, color='#6366F1', edgecolor='#312E81', alpha=0.75, label='Monthly Absolute % Error')
+        ax_et.bar(df_hist['date'], abs_pct_errors, width=1.8, color='#6366F1', alpha=0.75, label='Absolute % Error')
         ax_et.axhline(metrics['overall']['MAPE (%)'], color='#DC2626', linestyle='--', lw=2, label=f"Average MAPE ({metrics['overall']['MAPE (%)']:.2f}%)")
         ax_et.axhline(5.0, color='#F59E0B', linestyle=':', lw=1.8, label='Industrial Tolerance Limit (5%)')
 
         ax_et.axvline(df_hist['date'].iloc[split_idx], color='#EF4444', linestyle=':', lw=2, label='Test Split (2024-08)')
 
         ax_et.set_ylabel('Absolute Percentage Error (%)', fontweight='bold', fontsize=10, color='#0F172A')
-        ax_et.set_title('Monthly Forecast Precision Across Historical Horizon (2019 - 2025)', fontweight='bold', fontsize=11, color='#0F172A')
+        ax_et.set_title('Forecast Precision Across Historical Horizon (2019 - 2025)', fontweight='bold', fontsize=11, color='#0F172A')
         ax_et.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
         ax_et.xaxis.set_major_locator(mdates.YearLocator(1))
         ax_et.set_ylim(0, max(abs_pct_errors.max() + 1.5, 6.0))
@@ -1385,7 +1087,7 @@ elif page == "3. Model Validation & Diagnostic Visualizations":
 # ==============================================================================
 # MODULE 4: UYO MUNICIPAL ZONAL WASTE & GIS MAP (Section 4.C)
 # ==============================================================================
-elif page == "4. Uyo Municipal Zonal Waste & GIS Map":
+elif page == "3. Uyo Municipal Zonal Waste & GIS Map":
     st.markdown('<div class="portal-card-header">🗺️ Geographical Visualization & Zonal Waste Allocation (Section 4.C)</div>', unsafe_allow_html=True)
     
     st.markdown("""
@@ -1475,209 +1177,13 @@ elif page == "4. Uyo Municipal Zonal Waste & GIS Map":
 
 
 # ==============================================================================
-# MODULE 5: SCENARIO SIMULATION LAB (SENSITIVITY ENGINE)
+# MODULE 4: LIVE MODEL TESTING (SINGLE PREDICTION & BATCH CSV UPLOAD)
 # ==============================================================================
-elif page == "5. Scenario Simulation Lab (Sensitivity Engine)":
-    st.markdown('<div class="portal-card-header">🎛️ Interactive What-If Scenario Simulation & Sensitivity Analysis</div>', unsafe_allow_html=True)
+elif page == "4. Live Model Testing":
+    st.markdown('<div class="portal-card-header">🧪 Live Model Testing (Single Observation & Batch CSV Upload)</div>', unsafe_allow_html=True)
     
     st.markdown("""
-    Evaluate how **climate anomalies** (extreme rainfall or heat waves) and **demographic shocks** (accelerated urban migration) 
-    impact solid waste output in Uyo Municipality. The trained Gaussian Process model computes **real-time Bayesian inference** as sliders adjust.
-    """)
-
-    sim_col1, sim_col2 = st.columns([1.2, 1.8])
-    
-    with sim_col1:
-        st.markdown("#### Scenario Control Knobs")
-        sim_year = st.selectbox("Target Simulation Year:", [2026, 2027, 2028, 2029, 2030], index=0)
-        sim_pop_growth = st.slider("Annual Population Growth Rate (%)", 1.0, 5.5, 2.8, 0.1)
-        sim_temp_delta = st.slider("Temperature Anomaly (°C Shift)", -2.5, 3.5, 0.0, 0.1)
-        sim_rain_delta = st.slider("Rainfall Anomaly (% Shift)", -50, 60, 0, 5)
-        sim_extra_holidays = st.slider("Additional Public Holidays/Month", 0, 5, 0, 1)
-
-    # Compute simulation data
-    months_range = pd.date_range(start=f'{sim_year}-01-01', end=f'{sim_year}-12-01', freq='MS')
-    sim_df = pd.DataFrame({'date': months_range})
-    sim_df['year'] = sim_year
-    sim_df['month'] = sim_df['date'].dt.month
-    sim_df['time_index'] = (sim_df['year'] - 2019) * 12 + (sim_df['month'] - 1)
-    sim_df['sin_month'] = np.sin(2 * np.pi * sim_df['month'] / 12.0)
-    sim_df['cos_month'] = np.cos(2 * np.pi * sim_df['month'] / 12.0)
-
-    # Simulated population
-    last_hist_pop = df_hist['population'].iloc[-1]
-    years_ahead = sim_year - 2025
-    monthly_growth = (1 + (sim_pop_growth / 100.0)) ** (1/12)
-    sim_df['population'] = [last_hist_pop * (monthly_growth ** (12 * (years_ahead - 1) + m)) for m in range(1, 13)]
-
-    # Simulated weather
-    monthly_clim = df_hist.groupby('month')[['avg_temperature_c', 'rainfall_mm', 'humidity_percent']].mean().reset_index()
-    sim_df = sim_df.merge(monthly_clim, on='month', how='left')
-    sim_df['avg_temperature_c'] += sim_temp_delta
-    sim_df['rainfall_mm'] *= (1 + sim_rain_delta / 100.0)
-
-    # Simulated holidays
-    base_holidays = df_hist.groupby('month')['num_holidays'].median().reset_index()
-    sim_df = sim_df.merge(base_holidays, on='month', how='left')
-    sim_df['num_holidays'] += sim_extra_holidays
-
-    # Inference with GPR model
-    X_sim_scaled = scaler.transform(sim_df[feature_cols])
-    sim_pred, sim_std = model.predict(X_sim_scaled, return_std=True)
-    sim_df['sim_waste_tonnes'] = sim_pred
-    sim_df['ci_lower'] = sim_pred - 1.96 * sim_std
-    sim_df['ci_upper'] = sim_pred + 1.96 * sim_std
-
-    with sim_col2:
-        tot_sim = sim_df['sim_waste_tonnes'].sum()
-        mo_mean = sim_df['sim_waste_tonnes'].mean()
-        avg_std = sim_std.mean()
-
-        st.markdown(f"#### Projected Impact for Year {sim_year}")
-        s1, s2, s3 = st.columns(3)
-        with s1:
-            st.metric("Total Simulated Annual Waste", f"{tot_sim:,.0f} t/yr", f"{tot_sim/365:,.1f} t/day")
-        with s2:
-            st.metric("Monthly Mean Generation", f"{mo_mean:,.0f} t/mo", f"±{avg_std:.1f} t uncertainty")
-        with s3:
-            st.metric("Peak End Population", f"{sim_df['population'].iloc[-1]:,.0f}", f"Growth: {sim_pop_growth}%")
-
-        # Bar chart with error bars
-        fig_sim, ax_sim = plt.subplots(figsize=(7, 3.8), dpi=200)
-        fig_sim.patch.set_facecolor('#FFFFFF')
-        ax_sim.set_facecolor('#F8FAFC')
-        
-        ax_sim.bar(sim_df['month'], sim_df['sim_waste_tonnes'], yerr=1.96*sim_std, capsize=4, color='#3B82F6', edgecolor='#1D4ED8', alpha=0.85)
-        ax_sim.set_xticks(range(1, 13))
-        ax_sim.set_xticklabels(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], fontsize=9)
-        ax_sim.set_ylabel("Waste Generated (Tonnes)", fontsize=9.5, fontweight='bold', color='#0F172A')
-        ax_sim.set_title(f"Simulated Monthly Waste Profile with 95% CI ({sim_year})", fontweight='bold', fontsize=10.5, color='#0F172A')
-        ax_sim.grid(axis='y', linestyle='--', alpha=0.5, color='#CBD5E1')
-        st.pyplot(fig_sim)
-
-    st.markdown("---")
-    st.markdown("#### Detailed Simulation Output Table with Option D Waste Classes")
-    sim_table = sim_df[['month', 'population', 'avg_temperature_c', 'rainfall_mm', 'num_holidays', 'sim_waste_tonnes', 'ci_lower', 'ci_upper']].copy()
-    sim_table['month'] = sim_table['month'].apply(lambda m: pd.to_datetime(f"2026-{m:02d}-01").strftime("%B"))
-    sim_table['waste_class'] = sim_df['sim_waste_tonnes'].apply(lambda x: classify_waste_5tier(x)['class'])
-    sim_table['daily_tonnes'] = sim_df['sim_waste_tonnes'] / 30.4167
-    sim_table['trucks'] = np.ceil(sim_table['daily_tonnes'] / 30.0).astype(int)
-
-    sim_table.rename(columns={
-        'month': 'Month',
-        'population': 'Simulated Population',
-        'avg_temperature_c': 'Temp (°C)',
-        'rainfall_mm': 'Rainfall (mm)',
-        'num_holidays': 'Holidays',
-        'sim_waste_tonnes': 'Predicted Waste (Tonnes)',
-        'daily_tonnes': 'Daily Waste (t/day)',
-        'ci_lower': 'Lower 95% Bound',
-        'ci_upper': 'Upper 95% Bound',
-        'waste_class': 'Waste Class',
-        'trucks': 'Compactors'
-    }, inplace=True)
-    
-    st.dataframe(sim_table[[
-        'Month', 'Simulated Population', 'Temp (°C)', 'Rainfall (mm)', 'Holidays',
-        'Predicted Waste (Tonnes)', 'Daily Waste (t/day)', 'Waste Class', 
-        'Lower 95% Bound', 'Upper 95% Bound', 'Compactors'
-    ]].style.format({
-        'Simulated Population': '{:,.0f}',
-        'Temp (°C)': '{:.1f}',
-        'Rainfall (mm)': '{:.1f}',
-        'Predicted Waste (Tonnes)': '{:,.1f}',
-        'Daily Waste (t/day)': '{:,.1f}',
-        'Lower 95% Bound': '{:,.1f}',
-        'Upper 95% Bound': '{:,.1f}',
-        'Compactors': '{:d}'
-    }), use_container_width=True)
-
-
-# ==============================================================================
-# MODULE 6: FLEET LOGISTICS & RESOURCE SIZING
-# ==============================================================================
-elif page == "6. Fleet Logistics & Resource Sizing":
-    st.markdown('<div class="portal-card-header">🚛 Fleet Logistics & Strategic Resource Sizing (AKSEPWMA)</div>', unsafe_allow_html=True)
-    
-    st.markdown("""
-    In accordance with **Objective 4 & Section 1.4**, this module translates mathematical predictions into 
-    concrete infrastructure requirements: active compactor vehicle sizing, communal bin distribution, landfill airspace depletion, and operational budgeting.
-    """)
-
-    plan_year = st.selectbox("Select Municipal Planning Baseline Year:", [2026, 2027, 2028, 2029, 2030], index=0)
-    yr_data = df_future[df_future['year'] == plan_year]
-    annual_tonnes = yr_data['forecast_tonnes'].sum()
-    daily_tonnes = annual_tonnes / 365.0
-    upper_ci_annual = yr_data['ci_upper_95'].sum()
-    upper_ci_daily = upper_ci_annual / 365.0
-
-    st.markdown("### 1. Operational Resource & Fleet Sizing Card")
-    f1, f2, f3, f4 = st.columns(4)
-    with f1:
-        st.markdown(f"""
-        <div class="stat-card">
-            <div class="stat-label">Expected Daily Waste</div>
-            <div class="stat-value">{daily_tonnes:,.1f} t/d</div>
-            <div class="stat-subtext">Peak Bound: {upper_ci_daily:,.1f} t/d</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with f2:
-        # Standard compactor: 15 tonnes capacity, 2 trips/day = 30 tonnes/day/truck
-        trucks_base = int(np.ceil(daily_tonnes / (15 * 2)))
-        trucks_peak = int(np.ceil(upper_ci_daily / (15 * 2)))
-        st.markdown(f"""
-        <div class="stat-card" style="border-left-color: #2563EB;">
-            <div class="stat-label">Active 15T Compactors</div>
-            <div class="stat-value">{trucks_base} Trucks</div>
-            <div class="stat-subtext">Peak Sizing: {trucks_peak} Units</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with f3:
-        # 1100L communal bins @ ~0.25 tonnes capacity each + 20% buffer
-        bins_needed = int(np.ceil((daily_tonnes * 1.2) / 0.25))
-        st.markdown(f"""
-        <div class="stat-card" style="border-left-color: #F59E0B;">
-            <div class="stat-label">1,100L Communal Bins</div>
-            <div class="stat-value">{bins_needed:,} Bins</div>
-            <div class="stat-subtext">With 20% Municipal Buffer</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with f4:
-        # Compacted landfill density ~ 0.8 tonnes/m3
-        landfill_vol_m3 = annual_tonnes / 0.8
-        st.markdown(f"""
-        <div class="stat-card" style="border-left-color: #DC2626;">
-            <div class="stat-label">Annual Landfill Airspace</div>
-            <div class="stat-value">{landfill_vol_m3:,.0f} m³</div>
-            <div class="stat-subtext">At 0.8 t/m³ Compacted Density</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("---")
-    st.markdown("### 2. Strategic Policy Recommendations for AKSEPWMA Operations")
-    st.markdown(f"""
-    1. **Fleet Procurement & Haulage Scheduling:**  
-       AKSEPWMA should expand its operational fleet to a minimum of **{trucks_base} active 15-tonne compactor trucks** (with an additional {trucks_peak - trucks_base} standby reserve units for festive peak periods) to guarantee 100% daily clearance.
-       
-    2. **Sanitary Landfill Transition:**  
-       Uyo Municipality will generate **{annual_tonnes:,.0f} tonnes** of solid waste in {plan_year}, consuming **{landfill_vol_m3:,.0f} cubic meters** of disposal airspace. Authorities must urgently transition from open dumpsites (e.g. Lemna dumpsite corridor) to engineered sanitary landfills equipped with leachate collection.
-       
-    3. **Circular Economy & Decentralized Sorting Hubs:**  
-       By setting up material recovery and composting facilities at high-density commercial hubs (such as Itam Market, Ibom Plaza, and Aka Road), an estimated **35% ({(annual_tonnes * 0.35):,.0f} tonnes)** of recyclable and organic waste can be diverted from landfills annually.
-       
-    4. **Rainfall-Adaptive Scheduling:**  
-       Heavy precipitation during the peak wet season (June to September) hinders road mobility and increases waste moisture weight. Compactor routes must be shifted to double shifts during pre-dawn hours to avoid traffic congestion in flood-prone nodes.
-    """)
-
-
-# ==============================================================================
-# MODULE 7: LIVE MODEL TESTING SANDBOX (SINGLE PREDICTION & BATCH CSV UPLOAD)
-# ==============================================================================
-elif page == "7. Live Model Testing Sandbox (Upload & Predict)":
-    st.markdown('<div class="portal-card-header">🧪 Live Model Testing Sandbox (Single Observation & Batch CSV Upload)</div>', unsafe_allow_html=True)
-    
-    st.markdown("""
-    In accordance with **System Architecture Steps 12 to 15**, this testing sandbox allows evaluators and waste directors to:
+    This module allows evaluators and waste management directors to:
     1. **Single Entry Predictor:** Test GPR inference on custom hypothetical or real-time monthly variables.
     2. **Batch CSV Test:** Upload an unseen test dataset to automatically generate predictions, compute out-of-sample metrics ($R^2$, RMSE, MAE, MAPE, Coverage), and plot Actual vs. Predicted curves.
     """)
@@ -1952,90 +1458,6 @@ elif page == "7. Live Model Testing Sandbox (Upload & Predict)":
                     mime="text/csv"
                 )
 
-
-# ==============================================================================
-# MODULE 8: HISTORICAL DATA EXPLORER & SEASONALITY
-# ==============================================================================
-elif page == "8. Historical Data Explorer & Seasonality":
-    st.markdown('<div class="portal-card-header">📋 Historical Waste Explorer & Empirical Seasonal Dynamics</div>', unsafe_allow_html=True)
-    
-    st.markdown("""
-    Detailed inspection of the **84-month empirical baseline (2019 - 2025)** compiled in partnership with AKSEPWMA.
-    Examines demographic growth correlations and the distinct seasonal pattern induced by the tropical wet/dry monsoon cycle.
-    """)
-
-    c1, c2 = st.columns([2, 1])
-    with c1:
-        st.markdown("#### Historical Monthly Waste Trajectory (2019 - 2025)")
-        fig_hist, ax_hist = plt.subplots(figsize=(10, 4.5), dpi=200)
-        fig_hist.patch.set_facecolor('#FFFFFF')
-        ax_hist.set_facecolor('#F8FAFC')
-        
-        ax_hist.plot(df_hist['date'], df_hist['waste_tonnes_estimated'], color='#0F172A', lw=2.2, marker='o', markersize=4, label='Recorded Waste (Tonnes)')
-        ax_hist.set_title("AKSEPWMA Monthly Waste Ingestion Records in Uyo Municipality", fontsize=11.5, fontweight='bold', color='#0F172A')
-        ax_hist.set_ylabel("Waste Generated (Tonnes)", fontsize=10, fontweight='bold', color='#0F172A')
-        ax_hist.set_xlabel("Date Timeline", fontsize=10, fontweight='bold', color='#0F172A')
-        ax_hist.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
-        ax_hist.xaxis.set_major_locator(mdates.YearLocator())
-        ax_hist.grid(True, linestyle='--', alpha=0.5, color='#CBD5E1')
-        ax_hist.legend(facecolor='#FFFFFF')
-        st.pyplot(fig_hist)
-
-    with c2:
-        st.markdown("#### Empirical Statistics")
-        stats = df_hist[['waste_tonnes_estimated', 'population', 'avg_temperature_c', 'rainfall_mm', 'humidity_percent']].describe().T
-        st.dataframe(stats[['mean', 'std', 'min', '50%', 'max']].style.format("{:,.2f}"), use_container_width=True)
-        
-        mean_per_capita = df_hist['per_capita_kg_day'].mean() if 'per_capita_kg_day' in df_hist.columns else (df_hist['waste_tonnes_estimated'].sum() * 1000.0) / (df_hist['population'].sum() * 30.4167)
-        st.markdown(f"""
-        <div class="callout-info">
-            <b>Empirical Findings:</b><br>
-            • <b>Mean Monthly Tonnage:</b> {df_hist['waste_tonnes_estimated'].mean():,.1f} tonnes<br>
-            • <b>Observed Min:</b> {df_hist['waste_tonnes_estimated'].min():,.1f} tonnes<br>
-            • <b>Observed Max:</b> {df_hist['waste_tonnes_estimated'].max():,.1f} tonnes<br>
-            • <b>Mean Per Capita Rate:</b> {mean_per_capita:.2f} kg/capita/day
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("---")
-    
-    colA, colB = st.columns(2)
-    with colA:
-        st.markdown("#### Pearson Correlation Matrix")
-        corr_cols = ['waste_tonnes_estimated', 'population', 'avg_temperature_c', 'rainfall_mm', 'humidity_percent', 'num_holidays']
-        corr = df_hist[corr_cols].corr()
-        
-        fig_corr, ax_corr = plt.subplots(figsize=(6, 4.2), dpi=200)
-        fig_corr.patch.set_facecolor('#FFFFFF')
-        cax = ax_corr.matshow(corr, cmap='coolwarm', vmin=-1, vmax=1)
-        fig_corr.colorbar(cax, ax=ax_corr, fraction=0.046, pad=0.04)
-        
-        ticks = np.arange(len(corr_cols))
-        ax_corr.set_xticks(ticks)
-        ax_corr.set_yticks(ticks)
-        ax_corr.set_xticklabels(['Waste', 'Pop', 'Temp', 'Rain', 'Humidity', 'Holidays'], rotation=40, ha='left', fontsize=9, fontweight='600')
-        ax_corr.set_yticklabels(['Waste', 'Pop', 'Temp', 'Rain', 'Humidity', 'Holidays'], fontsize=9, fontweight='600')
-        
-        for (i, j), z in np.ndenumerate(corr):
-            ax_corr.text(j, i, f'{z:.2f}', ha='center', va='center', color='black', fontsize=9.5, fontweight='bold')
-        ax_corr.set_title("Feature Pearson Correlation Coefficients", pad=15, fontweight='bold', fontsize=11, color='#0F172A')
-        st.pyplot(fig_corr)
-
-    with colB:
-        st.markdown("#### Seasonal Monthly Average Profile")
-        monthly_avg = df_hist.groupby('month')['waste_tonnes_estimated'].mean()
-        
-        fig_bar, ax_bar = plt.subplots(figsize=(6, 4.2), dpi=200)
-        fig_bar.patch.set_facecolor('#FFFFFF')
-        ax_bar.set_facecolor('#F8FAFC')
-        
-        ax_bar.bar(monthly_avg.index, monthly_avg.values, color='#0284C7', edgecolor='#0369A1', alpha=0.85)
-        ax_bar.set_xticks(range(1, 13))
-        ax_bar.set_xticklabels(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], fontsize=9)
-        ax_bar.set_ylabel("Mean Waste (Tonnes)", fontsize=9.5, fontweight='bold', color='#0F172A')
-        ax_bar.set_title("Uyo Monthly Seasonal Waste Profile", fontweight='bold', fontsize=11, color='#0F172A')
-        ax_bar.grid(axis='y', linestyle='--', alpha=0.5, color='#CBD5E1')
-        st.pyplot(fig_bar)
 
 # ==============================================================================
 # FOOTER
